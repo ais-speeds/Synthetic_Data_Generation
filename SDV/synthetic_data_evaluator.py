@@ -37,11 +37,19 @@ class SyntheticDataEvaluator:
         for column_name in self.numerical_columns:
             column_score = KSComplement.compute(self.real_data[column_name], self.synthetic_data[column_name])
             ks_scores[column_name] = column_score
-            
-        mean_ks_score = sum(ks_scores.values()) / len(ks_scores)
-        ks_scores['mean_ks_score'] = mean_ks_score
         
-        return ks_scores
+        # Convert to dataframe for better readability
+        ks_scores_df = pd.DataFrame(ks_scores.items(), columns=['Variable', 'KSComplement Score'])
+        
+        # Sort the dataframe by 'KSComplement Score' in descending order
+        ks_scores_df = ks_scores_df.sort_values('KSComplement Score', ascending=False)
+        
+        # Compute mean KSComplement score and append it to the dataframe
+        mean_ks_score = sum(ks_scores.values()) / len(ks_scores)
+        mean_ks_row = pd.DataFrame([['mean_ks_score', mean_ks_score]], columns=['Variable', 'KSComplement Score'])
+        ks_scores_df = pd.concat([ks_scores_df, mean_ks_row], ignore_index=True)
+        
+        return ks_scores_df
     
     def tv_complement_eval(self):
         """Evaluate TVComplement for all categorical columns."""
@@ -50,11 +58,19 @@ class SyntheticDataEvaluator:
         for column_name in self.categorical_columns:
             column_score = TVComplement.compute(self.real_data[column_name], self.synthetic_data[column_name])
             tv_scores[column_name] = column_score
-            
-        mean_tv_score = sum(tv_scores.values()) / len(tv_scores)
-        tv_scores['mean_tv_score'] = mean_tv_score
         
-        return tv_scores
+        # Convert to dataframe for better readability
+        tv_scores_df = pd.DataFrame(tv_scores.items(), columns=['Variable', 'TVComplement Score'])
+        
+        # Sort the dataframe by 'TVComplement Score' in descending order
+        tv_scores_df = tv_scores_df.sort_values('TVComplement Score', ascending=False)
+        
+        # Compute mean TVComplement score and append it to the dataframe
+        mean_tv_score = sum(tv_scores.values()) / len(tv_scores)
+        mean_tv_row = pd.DataFrame([['mean_tv_score', mean_tv_score]], columns=['Variable', 'TVComplement Score'])
+        tv_scores_df = pd.concat([tv_scores_df, mean_tv_row], ignore_index=True)
+        
+        return tv_scores_df
 
     def descr_stat_similarity_eval(self):
         """Evaluate descriptive statistics (mean, median, std) for all numerical columns."""
@@ -73,7 +89,12 @@ class SyntheticDataEvaluator:
                 column_results[stat] = score
             results[column_name] = column_results
             
-        return results
+        # Flatten the nested dictionaries into a dataframe
+        results_df = pd.DataFrame.from_dict(results, orient='index')
+        results_df.reset_index(inplace=True)
+        results_df.rename(columns={'index': 'Variable'}, inplace=True)
+            
+        return results_df
     
     def corr_similarity_eval(self):
         """Evaluate correlation similarity for all pairs of numerical columns."""
@@ -105,11 +126,21 @@ class SyntheticDataEvaluator:
             correlation_scores[(col_A, col_B)] = score
             total_score += score
             total_pairs += 1
-            
+        
+        # Convert to dataframe for better readability
+        correlation_scores_df = pd.DataFrame.from_dict(correlation_scores, orient='index', columns=['Correlation Similarity'])
+        correlation_scores_df.index.name = 'Column Pair'
+        correlation_scores_df.reset_index(inplace=True)
+        
+        # Sort the dataframe by 'Correlation Similarity' in descending order
+        correlation_scores_df = correlation_scores_df.sort_values('Correlation Similarity', ascending=False)
+        
+        # Compute mean correlation similarity score and append it to the dataframe
         mean_correlation_score = total_score / total_pairs if total_pairs > 0 else None
-        correlation_scores['mean_correlation_score'] = mean_correlation_score
-
-        return correlation_scores
+        mean_correlation_row = pd.DataFrame([['mean_correlation_score', mean_correlation_score]], columns=['Column Pair', 'Correlation Similarity'])
+        correlation_scores_df = pd.concat([correlation_scores_df, mean_correlation_row], ignore_index=True)
+        
+        return correlation_scores_df
         
     def range_coverage_eval(self):
         """Evaluate RangeCoverage for all numerical columns."""
@@ -119,11 +150,21 @@ class SyntheticDataEvaluator:
         for column_name in self.numerical_columns:
             column_score = RangeCoverage.compute(self.real_data[column_name], self.synthetic_data[column_name])
             range_coverage_scores[column_name] = column_score
-
+        
+        # Convert to dataframe
+        range_coverage_df = pd.DataFrame.from_dict(range_coverage_scores, orient='index', columns=['Range Coverage'])
+        range_coverage_df.index.name = 'Variable'
+        range_coverage_df.reset_index(inplace=True)
+        
+        # Sort the dataframe by 'Range Coverage' in descending order
+        range_coverage_df = range_coverage_df.sort_values('Range Coverage', ascending=False)
+        
+        # Compute mean range coverage score and append it to the dataframe
         mean_range_coverage = sum(range_coverage_scores.values()) / len(range_coverage_scores)
-        range_coverage_scores['mean_range_coverage'] = mean_range_coverage
-
-        return range_coverage_scores
+        mean_range_coverage_row = pd.DataFrame([['mean_range_coverage', mean_range_coverage]], columns=['Variable', 'Range Coverage'])
+        range_coverage_df = pd.concat([range_coverage_df, mean_range_coverage_row], ignore_index=True)
+        
+        return range_coverage_df
     
     def cat_coverage_eval(self):
         """Evaluate CategoryCoverage for all categorical columns."""
@@ -133,11 +174,21 @@ class SyntheticDataEvaluator:
         for column_name in self.categorical_columns:
             column_score = CategoryCoverage.compute(self.real_data[column_name], self.synthetic_data[column_name])
             cat_coverage_scores[column_name] = column_score
-
+        
+        # Convert to dataframe
+        cat_coverage_df = pd.DataFrame.from_dict(cat_coverage_scores, orient='index', columns=['Category Coverage'])
+        cat_coverage_df.index.name = 'Variable'
+        cat_coverage_df.reset_index(inplace=True)
+        
+        # Sort the dataframe by 'Category Coverage' in descending order
+        cat_coverage_df = cat_coverage_df.sort_values('Category Coverage', ascending=False)
+        
+        # Compute mean category coverage score and append it to the dataframe
         mean_cat_coverage = sum(cat_coverage_scores.values()) / len(cat_coverage_scores)
-        cat_coverage_scores['mean_category_coverage'] = mean_cat_coverage
+        mean_cat_coverage_row = pd.DataFrame([['mean_category_coverage', mean_cat_coverage]], columns=['Variable', 'Category Coverage'])
+        cat_coverage_df = pd.concat([cat_coverage_df, mean_cat_coverage_row], ignore_index=True)   
 
-        return cat_coverage_scores
+        return cat_coverage_df
         
     def miss_val_similarity_eval(self):
         """Evaluate MissingValueSimilarity for columns with missing values."""
@@ -159,8 +210,13 @@ class SyntheticDataEvaluator:
             mean_missing_val_score = None  # Indicates that no columns have missing values
 
         missing_val_scores['mean_missing_value_similarity'] = mean_missing_val_score
+        
+        # Convert to dataframe
+        missing_val_scores_df = pd.DataFrame.from_dict(missing_val_scores, orient='index', columns=['Missing Value Similarity'])
+        missing_val_scores_df.index.name = 'Variable'
+        missing_val_scores_df.reset_index(inplace=True)
 
-        return missing_val_scores
+        return missing_val_scores_df
     
     def new_row_synthesis_eval(self, numerical_match_tolerance=0.01, synthetic_sample_size=None):
         """Evaluate New Row Synthesis for the synthetic data."""
@@ -176,8 +232,11 @@ class SyntheticDataEvaluator:
             numerical_match_tolerance=numerical_match_tolerance,
             synthetic_sample_size=synthetic_sample_size
         )
+        
+        # Convert to dataframe
+        new_row_synthesis_df = pd.DataFrame({'New Row Synthesis': [score]})
 
-        return score
+        return new_row_synthesis_df
     
     def generate_diagnostic_report(self, visualize=True):
         """Generate and return the Diagnostic Report with user input for diagnostic type."""
