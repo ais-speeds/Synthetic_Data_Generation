@@ -13,6 +13,9 @@ from sdmetrics.single_column import KSComplement, TVComplement, RangeCoverage, C
 from sdmetrics.column_pairs import CorrelationSimilarity
 from sdmetrics.single_table import NewRowSynthesis
 
+# This class is a comprehensive tool for evaluating synthetic data generated with the Synthetic Data Vault (SDV) synthesizers.
+# The SyntheticDataEvaluator class provides a wide range of functionalities from basic statistical evaluations to detailed reports and visualizations.
+
 class SyntheticDataEvaluator:
     def __init__(self, real_data, synthetic_data, metadata):
         self.real_data = real_data
@@ -28,6 +31,23 @@ class SyntheticDataEvaluator:
             col_name for col_name, col_value in self.metadata['columns'].items()
             if col_value['sdtype'] == 'categorical'
         ]
+        
+    def __str__(self):
+        methods = [
+            'ks_complement_eval',
+            'tv_complement_eval',
+            'descr_stat_similarity_eval',
+            'corr_similarity_eval',
+            'range_coverage_eval',
+            'cat_coverage_eval',
+            'miss_val_similarity_eval',
+            'new_row_synthesis_eval',
+            'generate_diagnostic_report',
+            'generate_quality_report',
+            'plot_columns',
+            'plot_column_pairs'
+        ]
+        return "Available methods for synthetic data evaluation:\n- " + "\n- ".join(methods)
         
         
     def ks_complement_eval(self):
@@ -410,35 +430,35 @@ class SyntheticDataEvaluator:
         fig.update_layout(height=1000, width=1500, title_text="Top 4 Real vs Synthetic Column Pair Correlations")
         fig.show()
         
-    def apply_all_metrics(self):
-        """Apply all metrics and reports in this class to evaluate your synthetic data."""
+    # def apply_all_metrics(self):
+    #     """Apply all metrics and reports in this class to evaluate your synthetic data."""
 
-        # Apply individual metrics
-        ks_scores = self.ks_complement_eval()
-        tv_scores = self.tv_complement_eval()
-        descr_stats = self.descr_stat_similarity_eval()
-        corr_scores = self.corr_similarity_eval()
-        range_coverage_scores = self.range_coverage_eval()
-        category_coverage_scores = self.cat_coverage_eval()
-        missing_value_scores = self.miss_val_similarity_eval()
-        new_row_synthesis_score = self.new_row_synthesis_eval()
+    #     # Apply individual metrics
+    #     ks_scores = self.ks_complement_eval()
+    #     tv_scores = self.tv_complement_eval()
+    #     descr_stats = self.descr_stat_similarity_eval()
+    #     corr_scores = self.corr_similarity_eval()
+    #     range_coverage_scores = self.range_coverage_eval()
+    #     category_coverage_scores = self.cat_coverage_eval()
+    #     missing_value_scores = self.miss_val_similarity_eval()
+    #     new_row_synthesis_score = self.new_row_synthesis_eval()
 
-        # Generate reports
-        diagnostic_report_details = self.generate_diagnostic_report(visualize=True)
-        quality_report_details = self.generate_quality_report(visualize=True)
+    #     # Generate reports
+    #     diagnostic_report_details = self.generate_diagnostic_report()
+    #     quality_report_details = self.generate_quality_report()
 
-        # Compile results
-        results = {
-            'KSComplement': ks_scores,
-            'TVComplement': tv_scores,
-            'DescriptiveStatsSimilarity': descr_stats,
-            'CorrelationSimilarity': corr_scores,
-            'RangeCoverage': range_coverage_scores,
-            'CategoryCoverage': category_coverage_scores,
-            'MissingValueSimilarity': missing_value_scores,
-            'NewRowSynthesis': new_row_synthesis_score,
-            'DiagnosticReport': diagnostic_report_details,
-            'QualityReport': quality_report_details
-        }
+    #     # Compile results
+    #     results = {
+    #         'KSComplement': ks_scores,
+    #         'TVComplement': tv_scores,
+    #         'DescriptiveStatsSimilarity': descr_stats,
+    #         'CorrelationSimilarity': corr_scores,
+    #         'RangeCoverage': range_coverage_scores,
+    #         'CategoryCoverage': category_coverage_scores,
+    #         'MissingValueSimilarity': missing_value_scores,
+    #         'NewRowSynthesis': new_row_synthesis_score,
+    #         'DiagnosticReport': diagnostic_report_details,
+    #         'QualityReport': quality_report_details
+    #     }
 
-        return results
+    #     return results
