@@ -238,55 +238,73 @@ class SyntheticDataEvaluator:
 
         return new_row_synthesis_df
     
-    def generate_diagnostic_report(self, visualize=True):
-        """Generate and return the Diagnostic Report with user input for diagnostic type."""
-        
-        # Available diagnostic types
-        diagnostic_types = ['Data Validity', 'Data Structure']
-        
-        # Prompt user to choose the detail type
-        print("Choose diagnostic type for Diagnostic Report:")
-        for i, option in enumerate(diagnostic_types, 1):
-            print(f"{i}. {option}")
-        choice = int(input("Enter choice (1 or 2): ")) - 1
-        diagnostic_type = diagnostic_types[choice]
-        
+    def generate_diagnostic_report(self):
+        """Generate and return the Diagnostic Report, allowing user to select the details to view."""
+        print("Generating Diagnostic Report. Note: Only 'Data Validity' is supported for visualization by the .get_visualization() method.")
+
+        # Available options for details
+        detail_options = ['Data Validity', 'Data Structure']
+        print("Choose detail to view:")
+        for index, option in enumerate(detail_options, start=1):
+            print(f"{index}. {option}")
+        choice = int(input("Enter your choice (1 or 2): "))
+
+        # Validate choice
+        if choice not in [1, 2]:
+            print("Invalid choice. Defaulting to 'Data Validity'.")
+            detail_choice = 'Data Validity'
+        else:
+            detail_choice = detail_options[choice - 1]
+
         # Generate the report
         diagnostic = DiagnosticReport()
         diagnostic.generate(self.real_data, self.synthetic_data, self.metadata)
 
-        details = diagnostic.get_details(diagnostic_type)
+        # Display details based on user choice
+        details = diagnostic.get_details(detail_choice)
+        print(f"\nDetails for {detail_choice}:")
+        print(details)
+
+        # Inform the user how to visualize 'Data Validity'
+        if detail_choice == 'Data Validity':
+            print("\nTo visualize 'Data Validity', use: diagnostic_report.get_visualization('Data Validity')")
+
+        return diagnostic
     
-        if visualize:
-            diagnostic.get_visualization(diagnostic_type)
-    
-        return details
-        
-    def generate_quality_report(self, visualize=True):
-        """Generate and return the Quality Report with user input for detail type."""
-        # Available detail types
-        detail_types = ['Column Shapes', 'Column Pair Trends']
-        
-        # Prompt user to choose the detail type
+    def generate_quality_report(self):
+        """Generate and return the Quality Report, allowing user to select the details to view."""
+        print("Generating Quality Report. You will be able to visualize the selected property after this method's execution.")
+
+        # Available options for details
+        detail_options = ['Column Shapes', 'Column Pair Trends']
         print("Choose detail type for Quality Report:")
-        for i, option in enumerate(detail_types, 1):
-            print(f"{i}. {option}")
-        choice = int(input("Enter choice (1 or 2): ")) - 1
-        detail_type = detail_types[choice]
-        
-        # Generate the report
+        for index, option in enumerate(detail_options, start=1):
+            print(f"{index}. {option}")
+        choice = int(input("Enter your choice (1 or 2): "))
+
+        # Validate choice
+        if choice not in [1, 2]:
+            print("Invalid choice. Defaulting to 'Column Shapes'.")
+            detail_choice = 'Column Shapes'
+        else:
+            detail_choice = detail_options[choice - 1]
+
+        # Generate the quality report
         quality_report = QualityReport()
         quality_report.generate(self.real_data, self.synthetic_data, self.metadata)
-        
-        details = quality_report.get_details(detail_type)
-    
-        if visualize:
-            quality_report.get_visualization(detail_type)
-        
-        return details
+
+        # Get and display the details based on the user choice
+        details = quality_report.get_details(detail_choice)
+        print(f"\nDetails for {detail_choice}:")
+        print(details)
+
+        # Inform the user how to visualize the selected detail
+        print(f"\nTo visualize '{detail_choice}', use: quality_report.get_visualization('{detail_choice}')")
+
+        return quality_report
 
     def plot_columns(self):
-        """Visualize columns based on user choice of numerical or categorical columns."""
+        """Visualize columns based on the user choice of numerical or categorical columns."""
         
         column_types = [self.numerical_columns, self.categorical_columns]
 
@@ -297,7 +315,7 @@ class SyntheticDataEvaluator:
         choice = int(input("Enter choice (1 or 2): ")) - 1
         columns = column_types[choice]
         
-        # Choose columns based on user input
+        # Choose columns based on the user input
         if choice == 0:
             columns = self.numerical_columns
             plot_type = 'distplot'
@@ -309,6 +327,10 @@ class SyntheticDataEvaluator:
         rows = cols = int(len(columns) ** 0.5) + 1
         fig = make_subplots(rows=rows, cols=cols, subplot_titles=columns)
         
+        # Flags to control the legend display
+        show_real_legend = True
+        show_synthetic_legend = True
+        
         for i, column_name in enumerate(columns, 1):
             # Create each column plot using SDV's 'get_column_plot'
             column_fig = get_column_plot(
@@ -318,33 +340,47 @@ class SyntheticDataEvaluator:
                 plot_type=plot_type
             )
             
-            # Determine subplot position
+            # Determine the subplot position
             row = (i - 1) // cols + 1
             col = (i - 1) % cols + 1
             
             # Add trace to the corresponding subplot
             for trace in column_fig['data']:
+                if trace.name == "Real":
+                    trace.showlegend = show_real_legend
+                    show_real_legend = False  # Only show legend for the first 'Real' trace
+                elif trace.name == "Synthetic":
+                    trace.showlegend = show_synthetic_legend
+                    show_synthetic_legend = False  # Only show legend for the first 'Synthetic' trace
+                else:
+                    trace.showlegend = False  # Don't show legend for other traces
+                    
                 fig.add_trace(trace, row=row, col=col)
                 
-        
         # Update layout and show the figure
         fig.update_layout(height=300*rows, width=300*cols, title_text="Real vs Synthetic Data")
         fig.show()
-    
-    def plot_column_pairs(self, column_names, plot_type='scatter'):
-        """Visualize the top 4 column pairs with highest correlation similarity."""
         
-        # Calculate correlation similarity scores
-        correlation_scores = self.corr_similarity_eval()
-
-        # Exclude the mean score and sort pairs by their correlation similarity
-        sorted_pairs = sorted(correlation_scores.items(), key=lambda x: x[1], reverse=True)
-        top_pairs = [pair for pair, score in sorted_pairs if pair != 'mean_correlation_score'][:4]
+    def plot_column_pairs(self):
+        """Visualize the top 4 column pairs with the highest correlation similarity."""
+        
+        # Compute the correlation similarity scores
+        correlation_scores_df = self.corr_similarity_eval()
+        
+        # Take the top 4 pairs for plotting
+        top_pairs_df = correlation_scores_df.head(4)
 
         # Create a 2x2 grid layout for the subplots
-        fig = make_subplots(rows=2, cols=2, subplot_titles=[f"{pair[0]} vs {pair[1]}" for pair in top_pairs])
-
-        for i, pair in enumerate(top_pairs, 1):
+        fig = make_subplots(rows=2, cols=2,
+                            subplot_titles=[f"{pair[0]} vs {pair[1]}" for pair in top_pairs_df['Column Pair']],
+                            horizontal_spacing=0.07,
+                            vertical_spacing=0.07)
+        
+        # Flags to control the legend display
+        show_real_legend = True
+        show_synthetic_legend = True
+            
+        for i, pair in enumerate(top_pairs_df['Column Pair'], 1):
             # Generate the column pair plot using SDV's 'get_column_pair_plot'
             column_pair_fig = get_column_pair_plot(
                 real_data=self.real_data,
@@ -353,16 +389,25 @@ class SyntheticDataEvaluator:
                 plot_type='scatter'
             )
 
-        # Determine subplot position
-        row = (i - 1) // 2 + 1
-        col = (i - 1) % 2 + 1
+            # Determine the subplot position
+            row_pos = (i - 1) // 2 + 1
+            col_pos = (i - 1) % 2 + 1
 
-        # Add trace to the corresponding subplot
-        for trace in column_pair_fig['data']:
-            fig.add_trace(trace, row=row, col=col)
+            # Add trace to the corresponding subplot
+            for trace in column_pair_fig['data']:
+                if trace.name == "Real":
+                    trace.showlegend = show_real_legend
+                    show_real_legend = False  # Only show legend for the first 'Real' trace
+                elif trace.name == "Synthetic":
+                    trace.showlegend = show_synthetic_legend
+                    show_synthetic_legend = False  # Only show legend for the first 'Synthetic' trace
+                else:
+                    trace.showlegend = False  # Don't show legend for other traces
+
+                fig.add_trace(trace, row=row_pos, col=col_pos)
 
         # Update layout and show the figure
-        fig.update_layout(height=600, width=600, title_text="Real vs Synthetic Column Pair Correlations")
+        fig.update_layout(height=1000, width=1500, title_text="Top 4 Real vs Synthetic Column Pair Correlations")
         fig.show()
         
     def apply_all_metrics(self):
